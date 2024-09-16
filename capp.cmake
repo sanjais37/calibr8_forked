@@ -1839,7 +1839,8 @@ elseif(CAPP_COMMAND STREQUAL "clean")
 else()
   message(FATAL_ERROR "Unknown command ${CAPP_COMMAND}!")
 endif()
-
+#print capp_command_result
+ #message("capp_command_result: ${capp_command_result}")
 if (NOT capp_command_result EQUAL 0)
   message(FATAL_ERROR "CApp command ${CAPP_COMMAND} failed")
 endif()

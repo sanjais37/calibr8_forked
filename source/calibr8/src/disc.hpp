@@ -232,6 +232,16 @@ class Disc {
         RCP<Residuals<double>> R,
         int step,
         bool use_measured = false);
+        
+    //! \brief Create the primal fields at a step
+    //! \param R The global/local residuals defining the problem
+    //! \param step The current load/time step
+    //! \param use_measured Fill in the values with the measured state field
+    void create_primal_reverse(
+        RCP<Residuals<double>> R,
+        int step,
+        int nsteps,
+        bool use_measured = false);
 
     //! \brief Create the fine model primal fields
     //! \param R The global/local residuals defining the problem

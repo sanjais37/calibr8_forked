@@ -583,6 +583,7 @@ void Disc::create_primal(
     bool use_measured) {
   DEBUG_ASSERT(m_primal.size() == size_t(step));
   Fields fields;
+
   int const ngr = R->global->num_residuals();
   int const model_form = BASE_MODEL;
   int const nlr = R->local[model_form]->num_residuals();
@@ -618,6 +619,54 @@ void Disc::create_primal(
   }
   m_primal.push_back(fields);
 }
+
+
+void Disc::create_primal_reverse(
+  RCP<Residuals<double>> R,
+  int step,
+  int nsteps,
+  bool use_measured) {
+  DEBUG_ASSERT(m_primal.size() == size_t(step));
+  Fields fields;
+
+  //int const nsteps = m_state->disc->num_time_steps();
+
+  int const ngr = R->global->num_residuals();
+  int const model_form = BASE_MODEL;
+  int const nlr = R->local[model_form]->num_residuals();
+  resize(fields.global, ngr);
+  resize(fields.local[model_form], nlr);
+  for (int i = 0; i < ngr; ++i) {
+    std::string const name = R->global->resid_name(i);
+    std::string const fname = name + "_" + std::to_string(step);
+    int const vtype = get_value_type(R->global->num_eqs(i), m_num_dims);
+    fields.global[i] = apf::createField(m_mesh, fname.c_str(), vtype, m_gv_shape);
+    if (step == nsteps) {
+      apf::zeroField(fields.global[i]);
+    } else if (use_measured && i == 0) {
+      std::string name = "measured_" + std::to_string(step);
+      apf::Field* f_meas = m_mesh->findField(name.c_str());
+      ALWAYS_ASSERT(f_meas);
+      apf::copyData(fields.global[i], f_meas);
+    } else {
+      apf::copyData(fields.global[i], m_primal[step + 1].global[i]);
+    }
+  }
+  for (int i = 0; i < nlr; ++i) {
+    std::string const name = R->local[model_form]->resid_name(i);
+    std::string const fname = name + "_" + std::to_string(step);
+    int const vtype = get_value_type(R->local[model_form]->num_eqs(i), m_num_dims);
+    fields.local[model_form][i] = apf::createField(m_mesh, fname.c_str(), vtype, m_lv_shape);
+    apf::zeroField(fields.local[model_form][i]);
+    if (step == nsteps) {
+      apf::zeroField(fields.local[model_form][i]);
+    } else {
+      apf::copyData(fields.local[model_form][i], m_primal[step + 1].local[model_form][i]);
+    }
+  }
+  m_primal.push_back(fields);
+}
+
 
 // TODO: add in local residual prolong operation
 void Disc::create_primal_fine_model(

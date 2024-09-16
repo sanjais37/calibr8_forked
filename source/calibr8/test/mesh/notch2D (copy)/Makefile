@@ -1,5 +1,4 @@
-####CALIBR8DIR=$HOME/calibr8/flavor/linux-shared/
-
+###CALIBR8DIR=$HOME/calibr8/flavor/linux-shared/
 ####export CALIBR8DIR=$HOME/calibr8/flavor/linux-shared/
 ####export LD_LIBRARY_PATH=$HOME/calibr8/flavor/linux-shared/install/gmodel/lib:$LD_LIBRARY_PATH
 

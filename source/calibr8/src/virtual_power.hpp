@@ -39,6 +39,14 @@ class VirtualPower {
     //! \param step The gradient of the internal virtual power
     void compute_at_step(int step, double& internal_virtual_power,
         Array1D<double>& grad);
+        
+        
+    //! \brief Compute the squared virtual power mismatch at a step based on adjoint sens
+    //! \param step The current step to compute at
+    //! \param step The internal virtual power
+    //! \param step The gradient of the internal virtual power
+    void compute_at_step_grad(int step, double& internal_virtual_power,
+        Array1D<double>& grad);
 
     ~VirtualPower();
 

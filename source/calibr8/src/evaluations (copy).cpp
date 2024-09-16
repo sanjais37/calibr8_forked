@@ -65,9 +65,10 @@ void eval_adjoint_measured_residual_and_grad(
       // peform operations on element input
       global->set_elem(me);
       local->set_elem(me);
-      //print("Hello, world!eval64==============");
+      local->gather(pt, xi, xi_prev);
+      print("Hello, world!eval64==============");
       global->gather(x, x_prev);
-      //print("Hello, world!eval65==============");
+      print("Hello, world!eval65==============");
 
       // loop over domain ip sets
       // ip_set = 0 -> coupled
@@ -88,16 +89,12 @@ void eval_adjoint_measured_residual_and_grad(
         apf::getIntPoint(me, q_order, pt, iota);
         double const w = apf::getIntWeight(me, q_order, pt);
         double const dv = apf::getDV(me, iota);
-        //print("Hello, world!eval87==============");
+        print("Hello, world!eval87==============");
 
         // solve the local constitutive equations at the integration point
         // and store the resultant local residual and state variables
         global->interpolate(iota);
-        //print("Hello, world!eval96==============");
-
-        //local->gather(pt, xi, xi_prev);
-        //print("Hello, world!eval100==============");
-
+        local->gather(pt, xi, xi_prev);
         nderivs = local->seed_wrt_xi();
         int path = local->solve_nonlinear(global);
         local->scatter(pt, xi);
@@ -127,7 +124,7 @@ void eval_adjoint_measured_residual_and_grad(
         //const char* message = "Hello, world!!!!!!==============";
         //std::cout << message << std::endl;
 
-        //print("Hello, world!==============");
+        print("Hello, world!==============");
 
         EMatrix const dC_dxiT = dC_dxi.transpose();
 	    EMatrix const dR_dxiT = dR_dxi.transpose();

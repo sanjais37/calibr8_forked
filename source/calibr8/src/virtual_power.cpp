@@ -145,6 +145,57 @@ void VirtualPower::compute_at_step(
   }
 }
 
+void VirtualPower::compute_at_step_grad(
+  int step,
+  double& internal_virtual_power,
+  Array1D<double>& grad) {
+
+  // gather data needed to solve the problem
+  Array1D<RCP<VectorT>>& R = m_state->la->b[OWNED];
+  ALWAYS_ASSERT(R.size() == 1);
+  ParameterList& resids = m_params->sublist("residuals", true);
+  ParameterList& global = resids.sublist("global residual", true);
+  bool const do_print = global.get<bool>("print step", false);
+  bool const use_measured = true;
+  int const nsteps = m_state->disc->num_time_steps();
+
+
+  if (step == nsteps) {
+    initialize_sens_matrices();
+  }
+  //print("Hello, world!165==============%d",nsteps);
+  // print the step information
+  if (do_print) print("ON VIRTUAL POWER STEP (%d)", step);
+
+  //print("Hello, world!165==============",nsteps);
+  // fill in the measured field
+  //m_disc->create_primal(m_state->residuals, step, use_measured);
+  //m_disc->create_primal_reverse(m_state->residuals, step, nsteps, use_measured);
+  //print("Hello, world!171==============");
+  // zero the residual and its dervatives
+  m_state->la->zero_b();
+  for (int distrib = 0; distrib < NUM_DISTRIB; ++distrib) {
+    m_mvec[distrib][0]->putScalar(0.);
+  }
+  //print("Hello, world!179==============");
+  // evaluate the residual and its derivatives
+  eval_adjoint_measured_residual_and_grad(m_state, m_disc, m_mvec[GHOST],
+                                  m_local_sens, step);
+
+  // gather the parallel objects to their OWNED state
+  m_state->la->gather_b();
+  RCP<MultiVectorT> mvec_owned = m_mvec[OWNED][0];
+  RCP<MultiVectorT> mvec_ghost = m_mvec[GHOST][0];
+  RCP<const ExportT> exporter = m_disc->exporter(0);
+  mvec_owned->doExport(*mvec_ghost, *exporter, Tpetra::ADD);
+
+  internal_virtual_power = R[0]->dot(*m_vf_vec[OWNED][0]);
+  for (int p = 0; p < m_num_params; ++p) {
+    auto mvec_p = mvec_owned->getVector(p);
+    grad[p] = mvec_p->dot(*m_vf_vec[OWNED][0]);
+  }
+}
+
 VirtualPower::~VirtualPower() {
   resize(m_vf_vec[OWNED], 0);
   resize(m_vf_vec[GHOST], 0);

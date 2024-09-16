@@ -14,6 +14,7 @@ set(CALIBR8_SOURCES
   evaluations.cpp
   femu_objective.cpp
   forward_sens_vfm_objective.cpp
+  adjoint_sens_vfm_objective.cpp
   fd_vfm_objective.cpp
   fields.cpp
   global_residual.cpp
