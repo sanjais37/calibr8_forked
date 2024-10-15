@@ -86,6 +86,7 @@ class ReactionMismatch : public QoI<T> {
     bool m_read_load = false;
     std::string m_load_in_file = "";
     double m_total_load = 0.;
+    //double m_total_load_elm = 0.;
     double m_load_mismatch = 0.;
     Array1D<double> m_load_data;
     Array3D<int> m_mapping; // m_mapping[es_idx][elem_idx][node_idx]

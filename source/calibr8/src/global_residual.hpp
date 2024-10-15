@@ -147,6 +147,20 @@ class GlobalResidual {
         EMatrix const& sens,
         Array1D<RCP<MultiVectorT>>& MV);
 
+    //! \brief Scatter the residual into the global residual vector
+    //! \param disc The discretization object
+    //! \param vector The element-level vector to scatter
+    //! \param RHS The global right hand side vectors
+    /*
+    double compute_elm_VP(
+      RCP<Disc> disc,
+      EVector const& rhs,
+      Array1D<double>& vf_vector) const; */
+    double compute_elm_VP(
+      RCP<Disc> disc,
+      EVector const& rhs,
+      VectorT& vf_vector, int elm) const;
+
     //! \brief Assign a value into a global vector
     //! \param disc The discretization object
     //! \param vector The element-level vector to assign
@@ -155,6 +169,7 @@ class GlobalResidual {
         RCP<Disc> disc,
         EVector const& rhs,
         Array1D<RCP<VectorT>>& RHS);
+
 
     //! \brief Scatter the residual into the global Jacobian matrix
     //! \param disc The discretization object

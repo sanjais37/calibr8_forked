@@ -3,6 +3,7 @@
 #include "evaluations.hpp"
 #include "linear_solve.hpp"
 #include "local_residual.hpp"
+#include "global_residual.hpp"
 #include "macros.hpp"
 #include "nested.hpp"
 #include "state.hpp"
@@ -10,6 +11,17 @@
 #include "virtual_power.hpp"
 
 namespace calibr8 {
+
+static int get_num_global_dofs(RCP<State> state) {
+  RCP<GlobalResidual<double>> global = state->residuals->global;
+  int const num_nodes = state->disc->num_gv_nodes_per_elem();
+  int ndofs = 0;
+  for (int i = 0; i < global->num_residuals(); ++i) {
+    ndofs += global->num_eqs(i) * num_nodes;
+  }
+  return ndofs;
+}
+
 
 static int get_num_local_dofs(RCP<State> state) {
   int const model_form = state->model_form;
@@ -34,6 +46,25 @@ void VirtualPower::initialize_sens_matrices() {
       m_local_sens[set][elem].resize(num_pts);
       for (int pt = 0; pt < num_pts; ++pt) {
         m_local_sens[set][elem][pt] = EMatrix::Zero(nlocal_dofs, m_num_params);
+      }
+    }
+  }
+}
+
+void VirtualPower::initialize_adjoint_history() {
+  int const nsets = m_disc->num_elem_sets();
+  int const nglobal_dofs = get_num_global_dofs(m_state);
+  int const nlocal_dofs = get_num_local_dofs(m_state);
+  int const num_pts = m_disc->num_lv_nodes_per_elem();
+  local_history.resize(nsets);
+  for (int set = 0; set < nsets; ++set) {
+    std::string const& set_name = m_disc->elem_set_name(set);
+    int const nelems = m_disc->elems(set_name).size();
+    local_history[set].resize(nelems);
+    for (int elem = 0; elem < nelems; ++elem) {
+      local_history[set][elem].resize(num_pts);
+      for (int pt = 0; pt < num_pts; ++pt) {
+        local_history[set][elem][pt] = EMatrix::Zero(nlocal_dofs,nglobal_dofs);
       }
     }
   }
@@ -69,6 +100,7 @@ VirtualPower::VirtualPower(
   }
 }
 
+
 double VirtualPower::compute_at_step(int step) {
 
   // gather data needed to solve the problem
@@ -92,7 +124,7 @@ double VirtualPower::compute_at_step(int step) {
   // gather the parallel objects to their OWNED state
   m_state->la->gather_b();  // gather the residual R
 
-  double const internal_virtual_power = R[0]->dot(*m_vf_vec[OWNED][0]);
+  double const internal_virtual_power =R[0]->dot(*m_vf_vec[OWNED][0]);
 
   return internal_virtual_power;
 
@@ -146,7 +178,7 @@ void VirtualPower::compute_at_step(
 }
 
 void VirtualPower::compute_at_step_grad(
-  int step,
+  int step, double vp_mistach_scaled,
   double& internal_virtual_power,
   Array1D<double>& grad) {
 
@@ -161,26 +193,25 @@ void VirtualPower::compute_at_step_grad(
 
 
   if (step == nsteps) {
-    initialize_sens_matrices();
+    initialize_adjoint_history();
   }
-  //print("Hello, world!165==============%d",nsteps);
+
   // print the step information
   if (do_print) print("ON VIRTUAL POWER STEP (%d)", step);
 
-  //print("Hello, world!165==============",nsteps);
-  // fill in the measured field
-  //m_disc->create_primal(m_state->residuals, step, use_measured);
-  //m_disc->create_primal_reverse(m_state->residuals, step, nsteps, use_measured);
-  //print("Hello, world!171==============");
   // zero the residual and its dervatives
   m_state->la->zero_b();
   for (int distrib = 0; distrib < NUM_DISTRIB; ++distrib) {
     m_mvec[distrib][0]->putScalar(0.);
   }
-  //print("Hello, world!179==============");
+
+  auto vf_vec   = m_vf_vec[OWNED][0];
+  auto vf_vector = vf_vec->getDataNonConst();
+  double vf_vec_0 = vf_vector[0];
+
   // evaluate the residual and its derivatives
-  eval_adjoint_measured_residual_and_grad(m_state, m_disc, m_mvec[GHOST],
-                                  m_local_sens, step);
+  eval_adjoint_measured_residual_and_grad(m_params, m_state, m_disc, m_mvec[GHOST],
+      local_history, step, vp_mistach_scaled);
 
   // gather the parallel objects to their OWNED state
   m_state->la->gather_b();

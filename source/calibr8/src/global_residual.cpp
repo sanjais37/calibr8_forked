@@ -7,6 +7,7 @@
 #include "mechanics.hpp"
 #include "mechanics_plane_stress.hpp"
 
+
 namespace calibr8 {
 
 template <typename T>
@@ -458,15 +459,86 @@ void GlobalResidual<T>::scatter_rhs(
   for (int i = 0; i < m_num_residuals; ++i) {
     auto R_data = RHS[i]->get1dViewNonConst();
     Array2D<LO> const rows = disc->get_element_lids(ent, i);
+    //print("m_num_residuals=%d",m_num_residuals);
+    //print("m_num_nodes=%d",m_num_nodes);
+    //print("m_num_eqs=%d",m_num_eqs[0]);
+    //exit(0);
+    for (int n = 0; n < m_num_nodes; ++n) {
+      for (int eq = 0; eq < m_num_eqs[i]; ++eq) {
+        LO const row = rows[n][eq];
+        //std::cout << "rows =\n " << row << std::endl;
+        int const i_idx = dx_idx(i, n, eq);
+        //std::cout << "i_idx =\n " << i_idx << std::endl;
+        //print("row = %d\n",row);
+       // print("i_idx = %d\n",i_idx);
+        R_data[row] += rhs(i_idx);
+      }
+    }
+    //exit(0);
+  }
+}
+
+template <typename T>
+double GlobalResidual<T>::compute_elm_VP(
+  RCP<Disc> disc,
+  EVector const& rhs,
+  VectorT& vf_vector, int elm) const{
+  double elm_VP = 0.0;
+  auto dataVF = vf_vector.getDataNonConst();
+  double vf_vec;
+  apf::MeshEntity* ent = apf::getMeshEntity(m_mesh_elem);
+  for (int i = 0; i < m_num_residuals; ++i) {
+    Array2D<LO> const rows = disc->get_element_lids(ent, i);
+/*
+    // Print the rows for debugging in a concise format
+    std::cout << "Rows for element " << elm << ": ";
+    for (int n = 0; n < m_num_nodes; ++n) {
+      for (int eq = 0; eq < m_num_eqs[i]; ++eq) {
+        std::cout << rows[n][eq] << " "; // Print all values in one line
+      }
+    }
+    std::cout << std::endl; // New line after each residual
+    //exit(0); */
     for (int n = 0; n < m_num_nodes; ++n) {
       for (int eq = 0; eq < m_num_eqs[i]; ++eq) {
         LO const row = rows[n][eq];
         int const i_idx = dx_idx(i, n, eq);
-        R_data[row] += rhs(i_idx);
+       // std::cout << "row = " << row << "," << "i_idx = " << i_idx << std::endl;
+        vf_vec = dataVF[row];
+        elm_VP += rhs[i_idx] * vf_vec;
       }
     }
+   //exit(0);
   }
+  return elm_VP;
 }
+
+
+/*
+template <typename T>
+double GlobalResidual<T>::compute_elm_VP(
+  RCP<Disc> disc,
+  EVector const& rhs,
+  Array1D<double>& vf_vector) const{
+    double elm_VP = 0.0;
+    //auto dataVF = vf_vector.getDataNonConst();
+    double vf_vec;
+    apf::MeshEntity* ent = apf::getMeshEntity(m_mesh_elem);
+    for (int i = 0; i < m_num_residuals; ++i) {
+      Array2D<LO> const rows = disc->get_element_lids(ent, i);
+      for (int n = 0; n < m_num_nodes; ++n) {
+        for (int eq = 0; eq < m_num_eqs[i]; ++eq) {
+          LO const row = rows[n][eq];
+          int const i_idx = dx_idx(i, n, eq);
+          vf_vec = vf_vector[row];
+          elm_VP += rhs[i_idx] * vf_vec;
+        }
+      }
+      //exit(0);
+    }
+    return elm_VP;
+}
+*/
 
 template <typename T>
 void GlobalResidual<T>::scatter_sens(

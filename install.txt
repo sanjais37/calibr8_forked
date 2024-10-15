@@ -14,3 +14,4 @@ Installation:
     > source env/linux-shared.sh
     > capp load
     > capp build -f linux-shared -j 4
+    > capp rebuild calibr8 -j 4 (for rebuilding)

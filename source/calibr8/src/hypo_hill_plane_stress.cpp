@@ -297,6 +297,7 @@ int HypoHillPlaneStress<T>::evaluate(
   T const phi = compute_hill_value(TC_3D, hill_params);
 
   T const sigma_yield = Y + S * (1. - std::exp(-D * alpha));
+  //T const sigma_yield = Y + S * pow((alpha+1.e-6), 2.0 / 3.0);
   T const f = (phi - sigma_yield) / val(mu);
 
   Tensor<T> R_TC;

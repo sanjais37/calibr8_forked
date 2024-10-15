@@ -6,16 +6,17 @@
 #include "macros.hpp"
 #include "qoi.hpp"
 #include "state.hpp"
-#include <iostream>
+
 
 namespace calibr8 {
 
 void eval_adjoint_measured_residual_and_grad(
+    RCP<ParameterList> params,
     RCP<State> state,
     RCP<Disc> disc,
     Array1D<RCP<MultiVectorT>>& dR,
-    Array3D<EMatrix>& local_sens,
-    int step) {
+    Array3D<EMatrix>& local_hist,
+    int step, double vp_mistach_scaled) {
 
   // gather discretization information
   apf::Mesh* mesh = disc->apf_mesh();
@@ -27,13 +28,11 @@ void eval_adjoint_measured_residual_and_grad(
   global->set_time_info(state->disc->time(step), state->disc->dt(step));
   Array1D<RCP<VectorT>>& RHS = state->la->b[GHOST];
 
+  Array1D<RCP<VectorT>>& RHS1 = state->la->b1[GHOST];
+
   // measured displacement field
   Array1D<apf::Field*> x = disc->primal(step).global;
   Array1D<apf::Field*> x_prev = disc->primal(step-1).global;
-
-  // Print the size of x and x_prev
-  //std::cout << "Size of x (current step fields): " << x.size() << std::endl;
-  //std::cout << "Size of x_prev (previous step fields): " << x_prev.size() << std::endl;
 
   // local state variables
   Array1D<apf::Field*> xi = disc->primal(step).local[model_form];
@@ -49,6 +48,8 @@ void eval_adjoint_measured_residual_and_grad(
   for (int es = 0; es < disc->num_elem_sets(); ++es) {
 
     local->before_elems(es, disc);
+    //print("disc->num_elem_sets() %d", disc->num_elem_sets());
+    //exit(0);
 
     // gather the elements in the current element set
     std::string const& es_name = disc->elem_set_name(es);
@@ -56,18 +57,16 @@ void eval_adjoint_measured_residual_and_grad(
 
     // loop over all elements in the element set
     for (size_t elem = 0; elem < elems.size(); ++elem) {
+    //for (size_t elem = 0; elem < 10; ++elem) {
 
       // get the current mesh element
       apf::MeshEntity* e = elems[elem];
       apf::MeshElement* me = apf::createMeshElement(mesh, e);
-      //print("Hello, world!eval_62==============");
 
       // peform operations on element input
       global->set_elem(me);
       local->set_elem(me);
-      //print("Hello, world!eval64==============");
       global->gather(x, x_prev);
-      //print("Hello, world!eval65==============");
 
       // loop over domain ip sets
       // ip_set = 0 -> coupled
@@ -88,30 +87,25 @@ void eval_adjoint_measured_residual_and_grad(
         apf::getIntPoint(me, q_order, pt, iota);
         double const w = apf::getIntWeight(me, q_order, pt);
         double const dv = apf::getDV(me, iota);
-        //print("Hello, world!eval87==============");
 
         // solve the local constitutive equations at the integration point
         // and store the resultant local residual and state variables
         global->interpolate(iota);
-        //print("Hello, world!eval96==============");
-
-        //local->gather(pt, xi, xi_prev);
-        //print("Hello, world!eval100==============");
-
+        local->gather(pt, xi, xi_prev);
         nderivs = local->seed_wrt_xi();
         int path = local->solve_nonlinear(global);
         local->scatter(pt, xi);
-        EMatrix const dC_dxi = local->eigen_jacobian(nderivs);
+        EMatrix const dC_dxiT = local->eigen_jacobian(nderivs).transpose();
 
         global->zero_residual();
         global->evaluate(local, iota, w, dv, ip_set);
         EVector const elem_resid = global->eigen_residual();
-        EMatrix const dR_dxi = global->eigen_jacobian(nderivs);
+        EMatrix const dR_dxiT = global->eigen_jacobian(nderivs).transpose();;
         local->unseed_wrt_xi();
 
         nderivs = local->seed_wrt_xi_prev();
         local->evaluate(global);
-        EMatrix const dC_dxi_prev = local->eigen_jacobian(nderivs);
+        EMatrix const dC_dxi_prevT = local->eigen_jacobian(nderivs).transpose();;
         local->unseed_wrt_xi_prev();
 
         nderivs = local->seed_wrt_params(es);
@@ -120,31 +114,19 @@ void eval_adjoint_measured_residual_and_grad(
 
         global->zero_residual();
         global->evaluate(local, iota, w, dv, ip_set);
-        //EVector const elem_resid = global->eigen_residual();
         EMatrix const dR_dp = global->eigen_jacobian(nderivs);
         local->unseed_wrt_params(es);
 
-        //const char* message = "Hello, world!!!!!!==============";
-        //std::cout << message << std::endl;
+        EMatrix const local_sens_pt_prev = local_hist[es][elem][pt];
 
-        //print("Hello, world!==============");
-
-        EMatrix const dC_dxiT = dC_dxi.transpose();
-	    EMatrix const dR_dxiT = dR_dxi.transpose();
-	    EMatrix const dC_dxi_prevT = dC_dxi_prev.transpose();
-
-        EMatrix const local_sens_pt_prev = local_sens[es][elem][pt];
-        EMatrix const local_sens_rhs = -dR_dxiT - local_sens_pt_prev;
+        EMatrix const local_sens_rhs = -dR_dxiT * vp_mistach_scaled - local_sens_pt_prev;
         EMatrix const phi = dC_dxiT.fullPivLu().solve(local_sens_rhs);
-        //local_sens[es][elem][pt] = dC_dxi_prevT * phi;
-        local_sens[es][elem][pt] = dC_dxi_prevT * phi;
+        local_hist[es][elem][pt] = dC_dxi_prevT * phi;
 
-        EMatrix const phiT = phi.transpose();
-
-        EMatrix const dJ_dp = dR_dp + phiT * dC_dp;
+        EMatrix const dL_dp = dR_dp * vp_mistach_scaled + phi.transpose() * dC_dp;
 
         global->scatter_rhs(disc, elem_resid, RHS);
-        global->scatter_sens(disc, dJ_dp, dR);
+        global->scatter_sens(disc, dL_dp, dR);
       }
 
       // perform operations on element output
@@ -205,6 +187,9 @@ void eval_measured_residual_and_grad(
 
     // loop over all elements in the element set
     for (size_t elem = 0; elem < elems.size(); ++elem) {
+
+      //print(" elems.size() = %d", elems.size());
+      //exit(0);
 
       // get the current mesh element
       apf::MeshEntity* e = elems[elem];
@@ -267,10 +252,27 @@ void eval_measured_residual_and_grad(
 
         EMatrix const local_sens_pt_prev = local_sens[es][elem][pt];
         EMatrix const local_sens_rhs = -dC_dp - dC_dxi_prev * local_sens_pt_prev;
+
+        //EMatrix const local_sens_rhs = -dC_dp;
+
+       // EMatrix const local_sens_rhs = - dC_dxi_prev * local_sens_pt_prev;
+
         EMatrix const dxi_dp = dC_dxi.fullPivLu().solve(local_sens_rhs);
         local_sens[es][elem][pt] = dxi_dp;
 
         EMatrix const dR_dp_total = dR_dxi * dxi_dp + dR_dp;
+
+        //EMatrix const dR_dp_total =  dR_dp;
+
+
+        // Print the matrix
+        //std::cout << "dC_dxi_prev :\n" << dC_dxi_prev  << std::endl;
+
+/*
+        // Print the size of the matrix
+        std::cout << "Number of rows: " << dC_dxi.rows() << std::endl;
+        std::cout << "Number of columns: " << dC_dxi.cols() << std::endl;
+        */
 
         global->scatter_rhs(disc, elem_resid, RHS);
         global->scatter_sens(disc, dR_dp_total, dR);

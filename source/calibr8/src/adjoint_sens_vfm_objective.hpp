@@ -22,7 +22,7 @@ class Adjoint_VFM_Objective : public Objective {
     RCP<VirtualPower> m_virtual_power;
     std::string m_load_in_file;
     Array1D<double> m_load_data;
-
+    //Array2D<double> m_load_data;
 };
 
 }

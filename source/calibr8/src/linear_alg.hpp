@@ -20,6 +20,9 @@ class LinearAlg {
     //! \brief Global right hand side vectors
     Array1D<RCP<VectorT>> b[NUM_DISTRIB];
 
+    //! \brief Global right hand side vectors
+    Array1D<RCP<VectorT>> b1[NUM_DISTRIB];
+
   public:
 
     //! \brief Build the linear algebra data for a given disc
@@ -47,6 +50,10 @@ class LinearAlg {
     //! \brief Perform an MPI reduction of the vectors b
     //! \details Used with the directive ADD
     void gather_b();
+
+    //! \brief Perform an MPI reduction of the vectors b
+    //! \details Used with the directive ADD
+    void gather_b1();
 
     //! \brief Perform an MPI reduction of the vectors b
     //! \details Used with the directive

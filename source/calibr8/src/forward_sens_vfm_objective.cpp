@@ -108,12 +108,13 @@ void FS_VFM_Objective::gradient(
     load_at_step = m_load_data[step - 1];
     volume_internal_virtual_power = thickness * internal_virtual_power;
     virtual_power_mismatch = volume_internal_virtual_power - load_at_step;
+    //virtual_power_mismatch = -load_at_step;
     J += 0.5 * obj_scale_factor * dt / total_time
         * std::pow(virtual_power_mismatch, 2);
 
     for (int i = 0; i < m_num_opt_params; ++i) {
-      grad[i] += grad_at_step[i] * virtual_power_mismatch
-          * obj_scale_factor * dt / total_time;
+      grad[i] +=  grad_at_step[i] * virtual_power_mismatch
+            * obj_scale_factor * dt / total_time;
     }
   }
   m_J_old = J;

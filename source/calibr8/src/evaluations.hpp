@@ -49,11 +49,12 @@ void eval_measured_residual_and_grad(
 //!   state->la->b[GHOST] as the residual R
 //!   the residual gradient dR (ghost)
 void eval_adjoint_measured_residual_and_grad(
+    RCP<ParameterList> params,
     RCP<State> state,
     RCP<Disc> disc,
     Array1D<RCP<MultiVectorT>>& dR,
-    Array3D<EMatrix>& local_sens,
-    int step);
+    Array3D<EMatrix>& local_hist,
+    int step, double vp_mistach_scaled);
 
 //! \brief Evaluate the Jacobian matrix and residual vector
 //! \param state The application state object
@@ -188,5 +189,4 @@ void eval_exact_errors(
 //! with momentum equations, and it assumes the pressure residual
 //! is indexed at 1.
 apf::Field* eval_cauchy(RCP<State> state, int step);
-
 }

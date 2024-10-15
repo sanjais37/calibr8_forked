@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
         inverse_params.get<double>("gradient tolerance", 1e-12);
     double const step_tol = inverse_params.get<double>("step tolerance", 1e-12);
     int const max_line_search_evals =
-        inverse_params.get<int>("max line search evals", 5);
+        inverse_params.get<int>("max line search evals", 50);
 
     rol_params->sublist("Status Test").set("Iteration Limit", iteration_limit);
     rol_params->sublist("Status Test").set("Gradient Tolerance", gradient_tol);
@@ -121,7 +121,7 @@ int main(int argc, char** argv) {
 
     bool isProcZero = (PCU_Comm_Self() == 0);
 
-    if (((obj_type == "adjoint" || obj_type == "FS_VFM") || obj_type == "Adjoint_VFM") && check_gradient) {
+    if (((obj_type == "adjoint" || obj_type == "Adjoint_VFM") || obj_type == "FS_VFM") && check_gradient) {
       int const num_steps = 13;
       Array2D<double> fd_results;
       ROL::Ptr<Array1D<double>> d_ptr = ROL::makePtr<Array1D<double>>(dim, 0.1);
