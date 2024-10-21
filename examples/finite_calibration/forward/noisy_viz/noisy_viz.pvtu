@@ -1,0 +1,18 @@
+<VTKFile type="PUnstructuredGrid">
+<PUnstructuredGrid GhostLevel="0">
+<PPoints>
+<PDataArray type="Float64" Name="coordinates" NumberOfComponents="3" format="binary"/>
+</PPoints>
+<PPointData>
+<PDataArray type="Float64" Name="measured_0" NumberOfComponents="3" format="binary"/>
+<PDataArray type="Float64" Name="measured_1" NumberOfComponents="3" format="binary"/>
+<PDataArray type="Float64" Name="measured_2" NumberOfComponents="3" format="binary"/>
+<PDataArray type="Float64" Name="measured_3" NumberOfComponents="3" format="binary"/>
+<PDataArray type="Float64" Name="measured_4" NumberOfComponents="3" format="binary"/>
+</PPointData>
+<PCellData>
+<PDataArray type="Int32" Name="apf_part" NumberOfComponents="1" format="binary"/>
+</PCellData>
+<Piece Source="0/0.vtu"/>
+</PUnstructuredGrid>
+</VTKFile>

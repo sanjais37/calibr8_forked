@@ -1,0 +1,14 @@
+%  sum the load at step
+
+load_data = load("element_loads.txt");
+
+no_elm = 4566;
+no_load_steps =4;
+
+load=zeros(no_load_steps,1);
+
+for i=1:no_load_steps
+
+load(i) = sum(load_data(1:no_elm,2))
+
+end

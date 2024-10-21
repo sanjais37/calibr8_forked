@@ -1,0 +1,71 @@
+inverse_notch2D_finite_J2_plane_stress:
+
+  problem:
+    name: misspecification_inverse_notch2D_Asym_finite_J2_plane_stress
+
+  discretization:
+    geom file: '/home/sk63837/calibr8/source/calibr8/test/mesh/notch2D_Asym/notch2D_Asym.dmg'
+    mesh file: '../../forward/misspecification_notch2D_Asym_finite_J2_plane_stress_synthetic/'
+    assoc file: '/home/sk63837/calibr8/source/calibr8/test/mesh/notch2D_Asym/notch2D_Asym.txt'
+    num steps: 4
+    step size: 1.
+
+  residuals:
+    global residual:
+      type: 'mechanics_plane_stress'
+      nonlinear max iters: 30
+      nonlinear absolute tol: 1.e-12
+      nonlinear relative tol: 1.e-12
+      max line search evals: 50
+      print convergence: false
+    local residual:
+      type: 'hypo_hill_plane_stress'
+      nonlinear max iters: 500
+      nonlinear absolute tol: 1.e-12
+      nonlinear relative tol: 1.e-12
+      materials:
+        body:
+          E: 200.e3
+          nu: 0.30
+          Y: 360.
+          S: 920.
+          D: 2.2
+          R00: 1.
+          R11: 1.
+          R22: 1.
+          R01: 1.
+          Q00: 1.
+          Q01: 0.
+          Q10: 0.
+          Q11: 1.
+
+  # bc name: [resid_idx, eq, node_set_name, value]
+  dirichlet bcs:
+    expression:
+      bc 1: [0, 0, ymin, 0.0]
+      bc 2: [0, 1, ymin, 0.0]
+      bc 3: [0, 1, ymax, 0.01 * t]
+
+
+  inverse:
+    objective type: "FS_VFM"
+    check gradient: false
+    print vfm mismatch: false
+    internal power scale factor: 1.0
+    objective scale factor: 1e0
+    thickness: 1.
+    load input file: "../../forward/load_misspecification.dat"
+    gradient tolerance: 1e-8
+    iteration limit: 500
+    max line search evals: 50
+    materials:
+      body:
+       #E:  [150.e3, 250.e3]
+       #nu: [0.23, 0.35]
+       Y:  [200., 500.]
+       S:  [100., 1500.]
+       D:  [1., 6.]
+
+  virtual fields:
+    w_x: 'sin(4*atan(1.)*(y-1.))'   #'cos(4. * atan(1.) * (y - 0.5) / 1.) * x'
+    w_y: 'y*(y+1.)/2.'     #'(y * (2 * (y - 0.5) + 1.) / (2 * 1.))'
