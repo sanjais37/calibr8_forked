@@ -222,14 +222,9 @@ ElemSet const& Disc::elems(std::string const& name) {
   return m_elem_sets[name];
 }
 
-SideSet const& Disc::sides(std::string const& name = "body") {
-  std::cout << "I am here" << std::endl;
+SideSet const& Disc::sides(std::string const& name) {
   //ALWAYS_ASSERT(m_side_sets.count(name));
-  std::cout << "I am here1" << std::endl;
-  std::cout << "m_side_sets[name]" << name << std::endl;
-  std::cout << "I am here2" << std::endl;
-  //exit(0);
-  return m_side_sets["body"];
+  return m_side_sets["name"];
 }
 
 NodeSet const& Disc::nodes(std::string const& name) {
