@@ -1,4 +1,0 @@
-split
-Usage: split <model> <mesh> <outMesh> <factor>
-
- mpirun -n 2 split /home/sk63837/calibr8/source/calibr8/test/mesh/notch2D_Asym/notch2D_Asym.dmg /home/sk63837/calibr8/source/calibr8/test/mesh/notch2D_Asym/notch2D_Asym.smb notch2D_Asym_2p.smb 2

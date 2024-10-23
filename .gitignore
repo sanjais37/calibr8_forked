@@ -1,6 +1,12 @@
+
+# Ignore everything in parent_folder
 flavor/*/build/
 flavor/*/install/
 flavor/*/venv/
+
+examples/*
+SimulationResults_FEMU_VFM_article/*
+
 source/eigen
 source/gmodel
 source/gtest
@@ -11,3 +17,8 @@ source/parmetis
 source/scorec
 source/trilinos
 source/zlib-ng
+
+source/calibr8/test/mesh/
+
+# Do not ignore these specific subfolders
+

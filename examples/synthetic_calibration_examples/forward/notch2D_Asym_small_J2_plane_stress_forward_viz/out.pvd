@@ -1,8 +1,0 @@
-<VTKFile type="Collection" version="0.1">
-  <Collection>
-    <DataSet timestep="1" group="" part="0" file="out_1/out_1.pvtu"/>
-    <DataSet timestep="2" group="" part="0" file="out_2/out_2.pvtu"/>
-    <DataSet timestep="3" group="" part="0" file="out_3/out_3.pvtu"/>
-    <DataSet timestep="4" group="" part="0" file="out_4/out_4.pvtu"/>
-  </Collection>
-</VTKFile>
