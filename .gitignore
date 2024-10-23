@@ -3,7 +3,7 @@
 flavor/*/build/
 flavor/*/install/
 flavor/*/venv/
-
+Testing/*
 examples/*
 SimulationResults_FEMU_VFM_article/*
 
