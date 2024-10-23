@@ -1,0 +1,15 @@
+if(NOT BUILD_TESTING)
+  return()
+endif()
+
+add_subdirectory(unit)
+add_subdirectory(primal)
+add_subdirectory(adjoint)
+add_subdirectory(femu)
+add_subdirectory(error)
+add_subdirectory(verify)
+
+add_executable(vectorize vectorize.cpp)
+target_link_libraries(vectorize PRIVATE calibr8)
+set_code_standards(vectorize)
+install(TARGETS vectorize)
